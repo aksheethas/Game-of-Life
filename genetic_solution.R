@@ -33,6 +33,8 @@ evaluateBoard <- function(startBoard, endBoard, delta){
         neighbors <- c(cell - size - 1, cell - size, cell - size + 1, cell - 1, cell + 1, cell + size - 1, cell + size, cell + size + 1)
       }
       
+      neighborCount <- sum(neighbors)
+      
       #Evaluate the rules of life for single cell and make changes
       if(candidateBoard[cell] == 0){ 
          if(neighborCount == 3){nextCandidate[cell] <- 1} #rule 4
@@ -54,6 +56,9 @@ evaluateBoard <- function(startBoard, endBoard, delta){
 
 
 acc <- vector(mode = 'numeric', length = nrow(train))
+
+#TODO: bugfix
+#TODO: refactor to compare to true start
 for (i in nrow(train)){ #gonna parallelize this
   rounds <- train[i,'delta']
   target <- train[i,403:802]

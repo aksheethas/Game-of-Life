@@ -1,5 +1,9 @@
 library(genalg)
+library(foreach)
+library(doParallel)
+
 train <- read.csv('train.csv')
+test <- read.csv('test.csv')
 
 evaluateBoard <- function(startBoard, endBoard, delta){
   #Takes in a row, returns the difference score after advancing the board delta rounds.
@@ -54,21 +58,30 @@ evaluateBoard <- function(startBoard, endBoard, delta){
 
 
 
+sampleVec <- sample(1:nrow(train),20)
 
-acc <- vector(mode = 'numeric', length = nrow(train))
+acc <- vector(mode = 'numeric', length = testlength)
 
-#TODO: bugfix
-#TODO: refactor to compare to true start
-for (i in nrow(train)){ #gonna parallelize this
-  rounds <- train[i,'delta']
-  target <- train[i,403:802]
-  wrapper <- function(x){ #creates a clean evaluation function with the correct end state and delta
-    #todo: double check that it's not passing the entire global environment by accident
-    evaluateBoard(x,target,rounds)
-  }
-  gamod <- rbga.bin(size = 400, popSize = 50, iters = 50, evalFunc = wrapper) #rbga parameters can be increased for more accuracy
-  acc[i] <- length(target) - sum(gamod$population[1,] == target)
-}
+#testing v2
+registerDoParallel(cores = 8)
+Sys.time()
+acc <- foreach(i = 1:length(sampleVec), .combine  = rbind, 
+                         .export   = c('train'),
+                         .packages = c('genalg'))  %dopar% {
+                           rounds <- train[i,'delta']
+                           end <- train[i,403:802]
+                           start <- train[i,3:402]
+                           wrapper <- function(x){ #creates a clean evaluation function with the correct end state and delta
+                             evaluateBoard(x,end,rounds)
+                           }
+                           #https://www.researchgate.net/post/What_is_the_optimal_recommended_population_size_for_differential_evolution2
+                           #Even among academics, there's significant disagreement on 'good' GA parameters.
+                           #pop size of 250-500 suggested for ~1000 dimensional data; we go on the high end
+                           #because we want a broad search space.
+                           gamod <- rbga.bin(size = 400, popSize = 500, iters = 75, evalFunc = wrapper)
+                           return(length(end) - sum(gamod$population[1,] == start))
+                         }
+Sys.time()
 
 ##testing functions
 #evaluate a correct one-step board

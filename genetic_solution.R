@@ -58,13 +58,13 @@ evaluateBoard <- function(startBoard, endBoard, delta){
 
 
 
-sampleVec <- sample(1:nrow(train),20)
+sampleVec <- sample(1:nrow(train),10)
 
-acc <- vector(mode = 'numeric', length = testlength)
+acc <- vector(mode = 'numeric', length = length(sampleVec))
 
-#testing v2
+#parallelized assessment
 registerDoParallel(cores = 8)
-Sys.time()
+t1 <- Sys.time()
 acc <- foreach(i = 1:length(sampleVec), .combine  = rbind, 
                          .export   = c('train'),
                          .packages = c('genalg'))  %dopar% {
@@ -74,14 +74,51 @@ acc <- foreach(i = 1:length(sampleVec), .combine  = rbind,
                            wrapper <- function(x){ #creates a clean evaluation function with the correct end state and delta
                              evaluateBoard(x,end,rounds)
                            }
-                           #https://www.researchgate.net/post/What_is_the_optimal_recommended_population_size_for_differential_evolution2
-                           #Even among academics, there's significant disagreement on 'good' GA parameters.
-                           #pop size of 250-500 suggested for ~1000 dimensional data; we go on the high end
-                           #because we want a broad search space.
-                           gamod <- rbga.bin(size = 400, popSize = 500, iters = 75, evalFunc = wrapper)
+                           gamod <- rbga.bin(size = 400, popSize = 3000, iters = 200, evalFunc = wrapper)
                            return(length(end) - sum(gamod$population[1,] == start))
                          }
-Sys.time()
+t2 <- Sys.time()
+# > t1
+# [1] "2017-04-30 04:28:46 EDT"
+# > t2
+# [1] "2017-04-30 09:30:04 EDT"
+# > acc
+# [,1]
+# result.1    41
+# result.2    60
+# result.3   110
+# result.4    93
+# result.5   106
+# result.6   137
+# result.7   100
+# result.8   118
+# result.9   123
+# result.10  113
+
+
+#single-board assessment with printouts
+samplePoint <- sample(1:nrow(train),1)
+rounds <- train[samplePoint,'delta']
+end <- train[samplePoint,403:802]
+start <- train[samplePoint,3:402]
+wrapper <- function(x){ #creates a clean evaluation function with the correct end state and delta
+  evaluateBoard(x,end,rounds)
+}
+t1 <- Sys.time()
+gamod <- rbga.bin(size = 400, popSize = 4000, iters = 300, evalFunc = wrapper, verbose = TRUE)
+acc <- length(end) - sum(gamod$population[1,] == start)
+t2 <- Sys.time()
+#t1: "2017-04-27 21:01:28 EDT"
+#t2: "2017-04-28 00:25:58 EDT"
+#acc: 99
+
+#https://www.researchgate.net/post/What_is_the_optimal_recommended_population_size_for_differential_evolution2
+#Even among academics, there's significant disagreement on 'good' GA parameters.
+#pop size of 250-500 suggested for ~1000 dimensional data; we go on the high end
+#because we want a broad search space.
+gamod <- rbga.bin(size = 400, popSize = 500, iters = 75, evalFunc = wrapper)
+return(length(end) - sum(gamod$population[1,] == start))
+
 
 ##testing functions
 #evaluate a correct one-step board

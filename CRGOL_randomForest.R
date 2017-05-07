@@ -1,5 +1,6 @@
 # Machine Learning - Final Project 
-# Conway's Reverse Game of Life
+# Conway's Reverse Game of Life 
+# Random forest implementation
 
 install.packages("randomForest")
 library(randomForest)
@@ -9,7 +10,7 @@ setwd("~/Desktop/Game-of-Life")
 set.seed(35633)
 
 # read in data
-train_data <- read.csv("Louvain_Clustering/train.csv")
+train_data <- read.csv("train.csv")
 str(train_data)
 
 
@@ -39,7 +40,7 @@ buildingTrainingModels <- function(dataset){
   return(models_delta)
 }
 
-#split training data by delta
+#run models for each delta
 models_delta1 <- buildingTrainingModels(train_data_delta1)
 models_delta2 <- buildingTrainingModels(train_data_delta2)
 models_delta3 <- buildingTrainingModels(train_data_delta3)

@@ -1,6 +1,8 @@
 #Game of Life Reversed
+#Brute Force Approach
 
-getLiveNeighbors <- function(board,idx){ #planning to modify this function to use convolution in order to calculate nearest neighbor matrix
+#Finding the Live Neighbors
+getLiveNeighbors <- function(board,idx){ 
   ncols <- ncol(board)
   nrows <- nrow(board)
   
@@ -19,6 +21,7 @@ getLiveNeighbors <- function(board,idx){ #planning to modify this function to us
   
 }
 
+#Applying the GOL rules
 updateState <- function(board,idx){
   
   ## 0 or 1 live neighbors dies
@@ -47,6 +50,7 @@ updateState <- function(board,idx){
   state
 }
 
+#Updating the Borad
 updateBoard <- function(board){
   new.board <- board
   for(i in 1:length(board)){
@@ -56,7 +60,7 @@ updateBoard <- function(board){
   new.board
 }
 
-## This takes a vector
+#Predicting a previous board state
 predictBoard <- function(board.vec,steps){
   
   board <- matrix(board.vec,nrow=20,ncol=20)
@@ -78,6 +82,7 @@ predictBoard <- function(board.vec,steps){
   }
 }
 
+#Instead of comparing the entire board, taking blocks of 4x4 in order to find the activated/live cells
 detectBlocks <- function(board){
   blockList <- list()
   nblocks <- 0
@@ -96,4 +101,27 @@ detectBlocks <- function(board){
   blockList
 }
 
+require(compiler)
+enableJIT(3)
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
 
+## Predict board
+test.out <- as.matrix(test[, 3:402])
+delta <- test[, 2]
+for (i in 1:nrow(test)) {
+  if (i%%100 == 0) {
+    print(i)
+  }
+  ## predict board takes a board (as a vector) and the number of steps backward
+  ## to predict and returns a predicted board
+  test.out[i, ] <- predictBoard(test.out[i, ], steps = delta[i])
+}
+
+#Generating formatted board for submission on Kaggle site
+test.submission <- cbind(test$id, test.out)
+colnames(test.submission) <- c("id", colnames(train)[grep("start", colnames(train))])
+write.csv(x = test.submission, file = "to_submit.csv", row.names = FALSE)
+
+#On Kaggle website calculates the Mean Absolute Error which is (1-Mean classification Accuracy). The MAE was calculated to be 0.13690.
+#So the Classification Accuracy was found to be 86.31%

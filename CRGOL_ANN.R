@@ -58,12 +58,30 @@ buildingTrainingModels <- function(dataset){
   return(models_delta)
 }
 
+buildingTrainingModel <- function(dataset){
+    model_data <- dataset[,-1]
+    model_data <- model_data[,-1]
+    
+    ann <- neuralnet(form,data = model_data, hidden = c(20,20), linear.output = FALSE)
+    print(class(ann))
+    
+    return(ann)
+
+}
+
 #run models for each cell
 models_delta1 <- buildingTrainingModels(train_data_delta1)
 models_delta2 <- buildingTrainingModels(train_data_delta2)
 models_delta3 <- buildingTrainingModels(train_data_delta3)
 models_delta4 <- buildingTrainingModels(train_data_delta4)
 models_delta5 <- buildingTrainingModels(train_data_delta5)
+
+#run models for each delta
+model_delta1 <- buildingTrainingModel(train_data_delta1)
+model_delta2 <- buildingTrainingModel(train_data_delta2)
+model_delta3 <- buildingTrainingModel(train_data_delta3)
+model_delta4 <- buildingTrainingModel(train_data_delta4)
+model_delta5 <- buildingTrainingModel(train_data_delta5)
 
 #read in test data
 test_data <- read.csv("cultural-mapper/test.csv")
